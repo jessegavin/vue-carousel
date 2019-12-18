@@ -63,14 +63,14 @@ const transitionEndNames = {
   onotransitionend: "oTransitionEnd otransitionend",
   ontransitionend: "transitionend"
 };
-const getTransitionStart = () => {
+const getTransitionStart = window => {
   for (let name in transitionStartNames) {
     if (name in window) {
       return transitionStartNames[name];
     }
   }
 };
-const getTransitionEnd = () => {
+const getTransitionEnd = window => {
   for (let name in transitionEndNames) {
     if (name in window) {
       return transitionEndNames[name];
@@ -565,10 +565,14 @@ export default {
      * in order to keep the magnet container in sync with the height its reference node.
      */
     attachMutationObserver() {
-      const MutationObserver =
-        window.MutationObserver ||
-        window.WebKitMutationObserver ||
-        window.MozMutationObserver;
+      let MutationObserver;
+
+      if (typeof window !== "undefined") {
+        MutationObserver =
+          window.MutationObserver ||
+          window.WebKitMutationObserver ||
+          window.MozMutationObserver;
+      }
 
       if (MutationObserver) {
         let config = {
@@ -617,6 +621,9 @@ export default {
      * @return {Number} Browser"s width in pixels
      */
     getBrowserWidth() {
+      if (typeof window === "undefined") {
+        return 0;
+      }
       this.browserWidth = window.innerWidth;
       return this.browserWidth;
     },
@@ -934,12 +941,12 @@ export default {
     this.computeCarouselWidth();
     this.computeCarouselHeight();
 
-    this.transitionstart = getTransitionEnd();
+    this.transitionstart = getTransitionStart(window);
     this.$refs["VueCarousel-inner"].addEventListener(
       this.transitionstart,
       this.handleTransitionStart
     );
-    this.transitionend = getTransitionEnd();
+    this.transitionend = getTransitionEnd(window);
     this.$refs["VueCarousel-inner"].addEventListener(
       this.transitionend,
       this.handleTransitionEnd
@@ -954,7 +961,9 @@ export default {
   },
   beforeDestroy() {
     this.detachMutationObserver();
-    window.removeEventListener("resize", this.getBrowserWidth);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("resize", this.getBrowserWidth);
+    }
     this.$refs["VueCarousel-inner"].removeEventListener(
       this.transitionstart,
       this.handleTransitionStart
